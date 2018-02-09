@@ -16,6 +16,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from mptt.models import MPTTModel, TreeForeignKey
 
 from circuits.models import Circuit
+from dcim import monitoring
 from extras.models import CustomFieldModel, CustomFieldValue, ImageAttachment
 from extras.rpc import RPC_CLIENTS
 from tenancy.models import Tenant
@@ -1078,6 +1079,9 @@ class Device(CreatedUpdatedModel, CustomFieldModel):
         if not self.platform:
             return None
         return RPC_CLIENTS.get(self.platform.rpc_client)
+
+    def get_monitoring_status(self):
+        return monitoring.get(self)
 
 
 #

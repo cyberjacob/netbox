@@ -7,7 +7,7 @@
 {% block content %}
 {% include 'dcim/inc/device_header.html' with active_tab='info' %}
 <div class="row">
-	<div class="col-md-6">
+    <div class="col-md-6">
         <div class="panel panel-default">
             <div class="panel-heading">
                 <strong>Device</strong>
@@ -96,6 +96,22 @@
                         {% endif %}
                     </td>
                 </tr>
+                <tr>
+                    <td>Monitoring</td>
+                    <td>
+                        <span style="color: {{ device.get_monitoring_status.get_worst_message.color }}">{{ device.get_monitoring_status.get_worst_message.description }}</span>
+                    </td>
+                </tr>
+                {% for message in device.get_monitoring_status.get_all_messages %}
+                    {% if message.message != "" %}
+                        <tr>
+                        <td>&nbsp;</td>
+                            <td style="color: {{ message.color }};">
+                                {{ message.message }}
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
             </table>
         </div>
         <div class="panel panel-default">
@@ -327,10 +343,10 @@
                 <div class="panel-body text-muted">None found</div>
             {% endif %}
         </div>
-	</div>
+    </div>
 </div>
 <div class="row">
-	<div class="col-md-12">
+    <div class="col-md-12">
         {% if device_bays or device.device_type.is_parent_device %}
             {% if perms.dcim.delete_devicebay %}
                 <form method="post" action="{% url 'dcim:devicebay_bulk_delete' pk=device.pk %}">
@@ -591,7 +607,7 @@
                 </form>
             {% endif %}
         {% endif %}
-	</div>
+    </div>
 </div>
 {% include 'inc/graphs_modal.html' %}
 {% include 'secrets/inc/private_key_modal.html' %}

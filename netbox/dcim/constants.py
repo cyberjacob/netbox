@@ -236,3 +236,26 @@ RPC_CLIENT_CHOICES = [
     [RPC_CLIENT_CISCO_IOS, 'Cisco IOS (SSH)'],
     [RPC_CLIENT_OPENGEAR, 'Opengear (SSH)'],
 ]
+
+# Monitoring levels
+# Report logging levels
+LOG_DEFAULT = 0
+LOG_OK = 10
+LOG_INFO = 20
+LOG_WARNING = 30
+LOG_FAILURE = 40
+LOG_DESCRIPTIONS = {
+    LOG_DEFAULT: "Unknown",
+    LOG_OK: "OK",
+    LOG_INFO: "Info",
+    LOG_WARNING: "Warning",
+    LOG_FAILURE: "Failure"
+}
+
+LOG_COLORS = {
+    LOG_DEFAULT: "gray",
+    LOG_OK: "green",
+    LOG_INFO: "blue",
+    LOG_WARNING: "orange",
+    LOG_FAILURE: "red",
+}
