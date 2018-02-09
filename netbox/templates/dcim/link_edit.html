@@ -1,0 +1,22 @@
+{% extends 'utilities/obj_edit.html' %}
+{% load form_helpers %}
+
+{% block form %}
+    <ul>
+        {% for field in form %}
+            {% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}
+        {% endfor %}
+    </ul>
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>Link</strong></div>
+        <div class="panel-body">
+            {% render_field form.name %}
+            {% render_field form.link_template %}
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            {% render_field form.content_type %}
+        </div>
+    </div>
+{% endblock %}

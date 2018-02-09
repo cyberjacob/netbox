@@ -735,3 +735,4 @@ class InterfaceConnectionFilter(django_filters.FilterSet):
             Q(interface_a__device__name__icontains=value) |
             Q(interface_b__device__name__icontains=value)
         )
+

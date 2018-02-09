@@ -32,7 +32,7 @@ from .models import (
     ConsolePort, ConsolePortTemplate, ConsoleServerPort, ConsoleServerPortTemplate, Device, DeviceBay,
     DeviceBayTemplate, DeviceRole, DeviceType, Interface, InterfaceConnection, InterfaceTemplate, Manufacturer,
     InventoryItem, Platform, PowerOutlet, PowerOutletTemplate, PowerPort, PowerPortTemplate, Rack, RackGroup,
-    RackReservation, RackRole, Region, Site,
+    RackReservation, RackRole, Region, Site, Link,
 )
 
 
@@ -1865,3 +1865,56 @@ class InventoryItemBulkDeleteView(PermissionRequiredMixin, BulkDeleteView):
     table = tables.InventoryItemTable
     template_name = 'dcim/inventoryitem_bulk_delete.html'
     default_return_url = 'dcim:inventoryitem_list'
+
+
+class LinkListView(ObjectListView):
+    queryset = Link.objects.all()
+    table = tables.LinkTable
+    template_name = 'dcim/link_list.html'
+
+
+class LinkCreateView(PermissionRequiredMixin, ObjectEditView):
+    permission_required = 'dcim.add_link'
+    model = Link
+    model_form = forms.LinkForm
+    template_name = 'dcim/link_edit.html'
+    default_return_url = 'dcim:link_list'
+
+
+class LinkBulkImportView(PermissionRequiredMixin, BulkImportView):
+    permission_required = 'dcim.add_link'
+    model_form = forms.LinkCSVForm
+    table = tables.LinkImportTable
+    template_name = 'dcim/link_import.html'
+    default_return_url = 'dcim:link_list'
+
+
+class LinkView(View):
+    def get(self, request, pk):
+
+        link = get_object_or_404(Link, pk=pk)
+
+        # Show graph button on interfaces only if at least one graph has been created.
+        show_graphs = Graph.objects.filter(type=GRAPH_TYPE_INTERFACE).exists()
+
+        return render(request, 'dcim/link.html', {
+            'link': link,
+            'show_graphs': show_graphs,
+        })
+
+
+class LinkEditView(LinkCreateView):
+    permission_required = 'dcim.change_link'
+
+
+class LinkDeleteView(PermissionRequiredMixin, ObjectDeleteView):
+    permission_required = 'dcim.delete_link'
+    model = Link
+    default_return_url = 'dcim:link_list'
+
+
+class LinkBulkDeleteView(PermissionRequiredMixin, BulkDeleteView):
+    permission_required = 'dcim.delete_link'
+    cls = Link
+    table = tables.LinkTable
+    default_return_url = 'dcim:link_list'

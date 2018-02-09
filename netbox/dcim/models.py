@@ -5,7 +5,8 @@ from itertools import count, groupby
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -41,6 +42,7 @@ class Region(MPTTModel):
     )
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(unique=True)
+    links = GenericRelation("Link")
 
     csv_headers = ['name', 'slug', 'parent']
 
@@ -91,6 +93,7 @@ class Site(CreatedUpdatedModel, CustomFieldModel):
     comments = models.TextField(blank=True)
     custom_field_values = GenericRelation(CustomFieldValue, content_type_field='obj_type', object_id_field='obj_id')
     images = GenericRelation(ImageAttachment)
+    links = GenericRelation("Link")
 
     objects = SiteManager()
 
@@ -164,6 +167,7 @@ class RackGroup(models.Model):
     name = models.CharField(max_length=50)
     slug = models.SlugField()
     site = models.ForeignKey('Site', related_name='rack_groups', on_delete=models.CASCADE)
+    links = GenericRelation("Link")
 
     csv_headers = ['site', 'name', 'slug']
 
@@ -245,6 +249,7 @@ class Rack(CreatedUpdatedModel, CustomFieldModel):
     comments = models.TextField(blank=True)
     custom_field_values = GenericRelation(CustomFieldValue, content_type_field='obj_type', object_id_field='obj_id')
     images = GenericRelation(ImageAttachment)
+    links = GenericRelation("Link")
 
     objects = RackManager()
 
@@ -433,6 +438,7 @@ class RackReservation(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     description = models.CharField(max_length=100)
+    links = GenericRelation("Link")
 
     class Meta:
         ordering = ['created']
@@ -487,6 +493,7 @@ class Manufacturer(models.Model):
     """
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(unique=True)
+    links = GenericRelation("Link")
 
     csv_headers = ['name', 'slug']
 
@@ -543,6 +550,7 @@ class DeviceType(models.Model, CustomFieldModel):
                                                        "\"None\" if this device type is neither a parent nor a child.")
     comments = models.TextField(blank=True)
     custom_field_values = GenericRelation(CustomFieldValue, content_type_field='obj_type', object_id_field='obj_id')
+    links = GenericRelation("Link")
 
     csv_headers = [
         'manufacturer', 'model', 'slug', 'part_number', 'u_height', 'is_full_depth', 'is_console_server',
@@ -761,6 +769,7 @@ class DeviceRole(models.Model):
         verbose_name="VM Role",
         help_text="Virtual machines may be assigned to this role"
     )
+    links = GenericRelation("Link")
 
     csv_headers = ['name', 'slug', 'color', 'vm_role']
 
@@ -870,6 +879,7 @@ class Device(CreatedUpdatedModel, CustomFieldModel):
     comments = models.TextField(blank=True)
     custom_field_values = GenericRelation(CustomFieldValue, content_type_field='obj_type', object_id_field='obj_id')
     images = GenericRelation(ImageAttachment)
+    links = GenericRelation("Link")
 
     objects = DeviceManager()
 
@@ -1078,6 +1088,21 @@ class Device(CreatedUpdatedModel, CustomFieldModel):
         if not self.platform:
             return None
         return RPC_CLIENTS.get(self.platform.rpc_client)
+
+    def get_links(self):
+        links = self.links.all() | \
+                Link.objects.filter(content_type__model="device", object_id__isnull=True) | \
+                self.site.links.all() | \
+                self.device_type.links.all() | \
+                self.device_type.manufacturer.links.all()
+        if self.device_role:
+            links |= self.device_role.links.all()
+        if self.site.region:
+            links |= self.site.region.links.all()
+        if self.rack:
+            links |= self.rack.group.links.all()
+        return links
+
 
 
 #
@@ -1476,6 +1501,7 @@ class InventoryItem(models.Model):
     )
     discovered = models.BooleanField(default=False, verbose_name='Discovered')
     description = models.CharField(max_length=100, blank=True)
+    links = GenericRelation("Link")
 
     csv_headers = [
         'device', 'name', 'manufacturer', 'part_id', 'serial', 'asset_tag', 'discovered', 'description',
@@ -1499,3 +1525,18 @@ class InventoryItem(models.Model):
             self.discovered,
             self.description,
         )
+
+
+@python_2_unicode_compatible
+class Link(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField(null=True,blank=True)
+    content_object = GenericForeignKey()
+    name = models.CharField(max_length=50, verbose_name='Name')
+    link_template = models.CharField(max_length=255, verbose_name='Link Template')
+
+    def render(self, obj):
+        return self.link_template.format(obj=obj)
+
+    def get_absolute_url(self):
+        return reverse('dcim:link', args=[self.pk])

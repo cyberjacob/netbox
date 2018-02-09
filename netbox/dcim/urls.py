@@ -211,4 +211,14 @@ urlpatterns = [
     url(r'^interface-connections/$', views.InterfaceConnectionsListView.as_view(), name='interface_connections_list'),
     url(r'^interface-connections/import/$', views.InterfaceConnectionsBulkImportView.as_view(), name='interface_connections_import'),
 
+    # Links
+    url(r'^links/$', views.LinkListView.as_view(), name='link_list'),
+    url(r'^links/add/$', views.LinkCreateView.as_view(), name='link_add'),
+    url(r'^links/import/$', views.LinkBulkImportView.as_view(), name='link_import'),
+    url(r'^links/delete/$', views.LinkBulkDeleteView.as_view(), name='link_bulk_delete'),
+    url(r'^links/(?P<pk>\d+)/$', views.LinkView.as_view(), name='link'),
+    url(r'^links/(?P<pk>\d+)/edit/$', views.LinkEditView.as_view(), name='link_edit'),
+    url(r'^links/(?P<pk>\d+)/delete/$', views.LinkDeleteView.as_view(), name='link_delete'),
+
+
 ]

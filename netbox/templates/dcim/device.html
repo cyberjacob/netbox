@@ -7,7 +7,7 @@
 {% block content %}
 {% include 'dcim/inc/device_header.html' with active_tab='info' %}
 <div class="row">
-	<div class="col-md-6">
+    <div class="col-md-6">
         <div class="panel panel-default">
             <div class="panel-heading">
                 <strong>Device</strong>
@@ -174,6 +174,26 @@
         {% endwith %}
         <div class="panel panel-default">
             <div class="panel-heading">
+                <strong>Links</strong>
+            </div>
+            {% if device.links %}
+                <table class="table table-hover panel-body attr-table">
+                    {% for link in device.get_links %}
+                        <tr>
+                        <td>
+                            <a href="{% render_link link device %}">{{ link.name }}</a>
+                        </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <div class="panel-body">
+                    <span class="text-muted">None</span>
+                </div>
+            {% endif %}
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
                 <strong>Comments</strong>
             </div>
             <div class="panel-body">
@@ -327,10 +347,10 @@
                 <div class="panel-body text-muted">None found</div>
             {% endif %}
         </div>
-	</div>
+    </div>
 </div>
 <div class="row">
-	<div class="col-md-12">
+    <div class="col-md-12">
         {% if device_bays or device.device_type.is_parent_device %}
             {% if perms.dcim.delete_devicebay %}
                 <form method="post" action="{% url 'dcim:devicebay_bulk_delete' pk=device.pk %}">
@@ -591,7 +611,7 @@
                 </form>
             {% endif %}
         {% endif %}
-	</div>
+    </div>
 </div>
 {% include 'inc/graphs_modal.html' %}
 {% include 'secrets/inc/private_key_modal.html' %}

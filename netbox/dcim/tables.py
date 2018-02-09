@@ -8,7 +8,7 @@ from utilities.tables import BaseTable, ToggleColumn
 from .models import (
     ConsolePort, ConsolePortTemplate, ConsoleServerPort, ConsoleServerPortTemplate, Device, DeviceBay,
     DeviceBayTemplate, DeviceRole, DeviceType, Interface, InterfaceTemplate, InventoryItem, Manufacturer, Platform,
-    PowerOutlet, PowerOutletTemplate, PowerPort, PowerPortTemplate, Rack, RackGroup, RackReservation, Region, Site,
+    PowerOutlet, PowerOutletTemplate, PowerPort, PowerPortTemplate, Rack, RackGroup, RackReservation, Region, Site, Link,
 )
 
 REGION_LINK = """
@@ -130,6 +130,12 @@ SUBDEVICE_ROLE_TEMPLATE = """
 UTILIZATION_GRAPH = """
 {% load helpers %}
 {% utilization_graph value %}
+"""
+
+LINK_LINK = """
+<a href="{% url 'dcim:link' pk=record.pk %}">
+    {{ record.name }}
+</a>
 """
 
 
@@ -587,3 +593,23 @@ class InventoryItemTable(BaseTable):
     class Meta(BaseTable.Meta):
         model = InventoryItem
         fields = ('pk', 'device', 'name', 'manufacturer', 'part_id', 'serial', 'asset_tag', 'description')
+
+
+class LinkTable(BaseTable):
+    pk = ToggleColumn()
+    name = tables.LinkColumn()
+    content_type = tables.Column()
+
+    class Meta(BaseTable.Meta):
+        model = Link
+        fields = ('pk', 'name', 'content_type',)
+
+
+class LinkImportTable(BaseTable):
+    name = tables.LinkColumn()
+    status = tables.Column()
+
+    class Meta(BaseTable.Meta):
+        model = Link
+        fields = ('name', )
+        empty_text = False

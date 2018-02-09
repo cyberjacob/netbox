@@ -135,6 +135,15 @@
                             {% endif %}
                             <a href="{% url 'dcim:platform_list' %}">Platforms</a>
                         </li>
+                        <li>
+                            {% if perms.dcim.add_link %}
+                                <div class="buttons pull-right">
+                                    <a href="{% url 'dcim:link_add' %}" class="btn btn-xs btn-success" title="Add"><i class="fa fa-plus"></i></a>
+                                    <a href="{% url 'dcim:link_import' %}" class="btn btn-xs btn-info" title="Import"><i class="fa fa-download"></i></a>
+                                </div>
+                            {% endif %}
+                            <a href="{% url 'dcim:link_list' %}">Links</a>
+                        </li>
                         <li class="divider"></li>
                         <li class="dropdown-header">Device Types</li>
                         <li>

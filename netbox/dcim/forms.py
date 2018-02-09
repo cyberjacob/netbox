@@ -4,10 +4,12 @@ import re
 
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.forms.array import SimpleArrayField
 from django.db.models import Count, Q
 from mptt.forms import TreeNodeChoiceField
 
+from dcim import querysets
 from extras.forms import CustomFieldForm, CustomFieldBulkEditForm, CustomFieldFilterForm
 from ipam.models import IPAddress
 from tenancy.forms import TenancyForm
@@ -29,7 +31,7 @@ from .models import (
     DeviceBay, DeviceBayTemplate, ConsolePort, ConsolePortTemplate, ConsoleServerPort, ConsoleServerPortTemplate,
     Device, DeviceRole, DeviceType, Interface, InterfaceConnection, InterfaceTemplate, Manufacturer, InventoryItem,
     Platform, PowerOutlet, PowerOutletTemplate, PowerPort, PowerPortTemplate, Rack, RackGroup, RackReservation,
-    RackRole, Region, Site,
+    RackRole, Region, Site, Link,
 )
 
 DEVICE_BY_PK_RE = '{\d+\}'
@@ -1959,3 +1961,92 @@ class InventoryItemFilterForm(BootstrapMixin, forms.Form):
         to_field_name='slug',
         null_label='-- None --'
     )
+
+
+class LinkForm(BootstrapMixin, CustomFieldForm):
+    content_type = forms.ModelChoiceField(
+        queryset=ContentType.objects.filter(model__in=["region", "site", "rackgroup", "rack", "rackreservation", "manufacturer", "devicetype", "device", "inventoryitem"]),
+        required=True,
+        label='Object Type'
+    )
+
+    class Meta:
+        model = Link
+        fields = [
+            'name', 'link_template', "content_type"
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super(LinkForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        raise forms.ValidationError(
+            self.errors
+        )
+
+class BaseLinkCSVForm(forms.ModelForm):
+
+    class Meta:
+        fields = []
+        model = Link
+
+    def clean(self):
+        super(BaseLinkCSVForm, self).clean()
+
+
+class LinkCSVForm(BaseLinkCSVForm):
+    site = forms.ModelChoiceField(
+        queryset=Site.objects.all(),
+        to_field_name='name',
+        help_text='Name of parent site',
+        error_messages={
+            'invalid_choice': 'Invalid site name.',
+        }
+    )
+    rack_group = forms.CharField(
+        required=False,
+        help_text='Parent rack\'s group (if any)'
+    )
+    rack_name = forms.CharField(
+        required=False,
+        help_text='Name of parent rack'
+    )
+    face = CSVChoiceField(
+        choices=RACK_FACE_CHOICES,
+        required=False,
+        help_text='Mounted rack face'
+    )
+    cluster = forms.ModelChoiceField(
+        queryset=Cluster.objects.all(),
+        to_field_name='name',
+        required=False,
+        help_text='Virtualization cluster',
+        error_messages={
+            'invalid_choice': 'Invalid cluster name.',
+        }
+    )
+
+    class Meta(BaseLinkCSVForm.Meta):
+        pass
+
+    def clean(self):
+
+        super(LinkCSVForm, self).clean()
+
+        site = self.cleaned_data.get('site')
+        rack_group = self.cleaned_data.get('rack_group')
+        rack_name = self.cleaned_data.get('rack_name')
+
+        # Validate rack
+        if site and rack_group and rack_name:
+            try:
+                self.instance.rack = Rack.objects.get(site=site, group__name=rack_group, name=rack_name)
+            except Rack.DoesNotExist:
+                raise forms.ValidationError("Rack {} not found in site {} group {}".format(rack_name, site, rack_group))
+        elif site and rack_name:
+            try:
+                self.instance.rack = Rack.objects.get(site=site, group__isnull=True, name=rack_name)
+            except Rack.DoesNotExist:
+                raise forms.ValidationError("Rack {} not found in site {} (no group)".format(rack_name, site))
+

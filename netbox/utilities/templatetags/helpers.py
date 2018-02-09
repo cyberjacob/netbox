@@ -149,3 +149,8 @@ def utilization_graph(utilization, warning_threshold=75, danger_threshold=90):
         'warning_threshold': warning_threshold,
         'danger_threshold': danger_threshold,
     }
+
+
+@register.simple_tag()
+def render_link(link, object):
+    return link.render(object)
